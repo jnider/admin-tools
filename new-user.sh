@@ -18,8 +18,11 @@ function usage()
 
 function create_dir
 {
-	echo "Creating .ssh directory"
-	mkdir -p $ssh_dir
+	if [ ! -d $ssh_dir ]; then
+		echo "Creating .ssh directory"
+		mkdir -p $ssh_dir
+	fi
+
 	if [ ! -d $ssh_dir ]; then
 		echo "Error $? creating home ssh directory $ssh_dir"
 		exit
@@ -100,7 +103,6 @@ echo "Adding user account $user"
 useradd -U -s /bin/bash -m $user 2> /dev/null
 ret=$?
 if [[ $ret == 0 ]]; then
-	create_dir
 	# set and print the password!
 	echo $user:$pw | chpasswd
 	echo "The password is: $pw"
@@ -110,6 +112,9 @@ else
 	echo "Error $ret adding user"
 	exit
 fi
+
+# make sure the ssh directory exists
+create_dir
 
 echo "Copying public key"
 key_name=${key##*/}
