@@ -6,11 +6,12 @@
 function usage()
 {
 	echo "Create a user account on a remote machine and set it up for SSH access"
-	echo "$0 [-a <admin>] [-c] -u <username> -k <key> [-p <password] [-r <remote>]"
+	echo "$0 [-a <admin>] [-c] -u <username> -k <key> [-p <password] [-r <remote>] [-i <identity>]"
 	echo "Where:"
 	echo "admin			The name of the administrator account on the remote machine (that has passwordless sudo access)"
 	echo "cleanup		Remove the temporary files when done"
 	echo "username		The name of the user account"
+	echo "identity    The identity file (private key) of the administrator account"
 	echo "key			The name of the file containing the user's public key"
 	echo "remote			The IP address or name of the remote machine. This can be omitted for creating a user on the local machine"
 	echo "password			New password for the user"
@@ -29,7 +30,7 @@ function create_dir
 	fi
 }
 
-while getopts "a:cu:k:p:r:" params; do
+while getopts "a:cu:i:k:p:r:" params; do
 	case "$params" in
 	a)
 		admin=${OPTARG}
@@ -41,6 +42,10 @@ while getopts "a:cu:k:p:r:" params; do
 
 	u)
 		user=${OPTARG}
+		;;
+
+	i)
+		identity=${OPTARG}
 		;;
 
 	k)
@@ -59,11 +64,14 @@ done
 
 #echo "admin=$admin"
 #echo "user=$user"
+#echo "identity=$identity"
 #echo "key=$key"
 #echo "remote=$remote"
 #echo "password=$pw"
 
 ssh_dir=/home/$user/.ssh
+
+IDENTITY=${identity:+"-i $identity"}
 
 # generate a random password if one has not been provided
 if [[ -z $pw ]]; then
@@ -74,11 +82,11 @@ fi
 if [[ ! -z $remote ]]; then
 	echo "copying script to $remote:/tmp"
 	# copy myself to the remote machine
-	scp $0 $key $admin@$remote:/tmp
+	scp $IDENTITY $0 $key $admin@$remote:/tmp
 
 	# execute myself on the remote machine
 	exe_name=${0##*/}
-	ssh $admin@$remote sudo /tmp/$exe_name -a $admin -c -u $user -k /tmp/$key -p $pw
+	ssh $IDENTITY $admin@$remote sudo /tmp/$exe_name -a $admin -c -u $user -k /tmp/$key -p $pw
 	echo "Done!"
 	exit
 fi
