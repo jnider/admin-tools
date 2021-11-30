@@ -1,20 +1,22 @@
 #!/bin/bash
 
 # 2021-05-13 J.Nider
-# create user account and set ssh public key
+# Create a user account on a local or remote host. Add an ssh public key for
+# remote access. If the account already exists, add a new key for ssh
+# authentication.
 
 function usage()
 {
 	echo "Create a user account on a remote machine and set it up for SSH access"
-	echo "$0 [-a <admin>] [-c] -u <username> -k <key> [-p <password] [-r <remote>] [-i <identity>]"
+	echo "$0 -u <username> -k <key> [-a <admin>] [-c] [-i <identity>] [-p <password] [-r <remote>]"
 	echo "Where:"
-	echo "admin			The name of the administrator account on the remote machine (that has passwordless sudo access)"
-	echo "cleanup		Remove the temporary files when done"
-	echo "username		The name of the user account"
+	echo "username    The name of the user account to create"
+	echo "key         The name of the file containing the public key for the new account"
+	echo "admin       The name of the administrator account on the remote machine (that has passwordless sudo access)"
+	echo "cleanup     Remove the temporary files when done"
+	echo "password    Password for the new account"
+	echo "remote      The IP address or name of the remote machine. This can be omitted for creating a user on the local machine"
 	echo "identity    The identity file (private key) of the administrator account"
-	echo "key			The name of the file containing the user's public key"
-	echo "remote			The IP address or name of the remote machine. This can be omitted for creating a user on the local machine"
-	echo "password			New password for the user"
 }
 
 function create_dir
