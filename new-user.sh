@@ -8,15 +8,16 @@
 function usage()
 {
 	echo "Create a user account on a remote machine and set it up for SSH access"
-	echo "$0 -u <username> -k <key> [-a <admin>] [-c] [-i <identity>] [-p <password] [-r <remote>]"
+	echo "$0 -u <username> -k <key> [-a <admin>] [-c] [-i <identity>] [-p <password] [-r <remote>] [-s]"
 	echo "Where:"
 	echo "username    The name of the user account to create"
 	echo "key         The name of the file containing the public key for the new account"
 	echo "admin       The name of the administrator account on the remote machine (that has passwordless sudo access)"
-	echo "cleanup     Remove the temporary files when done"
+	echo "-c          Clean up (i.e. remove) the temporary files when done"
+	echo "identity    The identity file (private key) of the administrator account"
 	echo "password    Password for the new account"
 	echo "remote      The IP address or name of the remote machine. This can be omitted for creating a user on the local machine"
-	echo "identity    The identity file (private key) of the administrator account"
+	echo "-s          Give the new account passwordless sudo privileges"
 }
 
 function create_dir
@@ -32,14 +33,14 @@ function create_dir
 	fi
 }
 
-while getopts "a:cu:i:k:p:r:" params; do
+while getopts "a:cu:i:k:p:r:s" params; do
 	case "$params" in
 	a)
 		admin=${OPTARG}
 		;;
 
 	c)
-		cleanup=true
+		cleanup=1
 		;;
 
 	u)
@@ -61,15 +62,22 @@ while getopts "a:cu:i:k:p:r:" params; do
 	r)
 		remote=${OPTARG}
 		;;
+
+	s)
+		superuser=1
+		;;
 	esac
 done
 
-#echo "admin=$admin"
-#echo "user=$user"
-#echo "identity=$identity"
-#echo "key=$key"
-#echo "remote=$remote"
-#echo "password=$pw"
+if [[ "$VERBOSE" ]]; then
+	echo "admin=$admin"
+	echo "user=$user"
+	echo "identity=$identity"
+	echo "key=$key"
+	echo "remote=$remote"
+	echo "password=$pw"
+	echo "superuser=$superuser"
+fi
 
 ssh_dir=/home/$user/.ssh
 
@@ -88,13 +96,12 @@ if [[ ! -z $remote ]]; then
 
 	# execute myself on the remote machine
 	exe_name=${0##*/}
-	ssh $IDENTITY $admin@$remote sudo /tmp/$exe_name -a $admin -c -u $user -k /tmp/$key -p $pw
+	ssh $IDENTITY $admin@$remote sudo /tmp/$exe_name -a $admin ${cleanup:+"-c"} -u $user ${key:+"-k /tmp/$key"} ${pw:+"-p $pw"} ${superuser:+"-s"}
 	echo "Done!"
 	exit
 fi
 
 # you must be root to run this
-echo "$admin: Creating account $user"
 if [ $EUID != 0 ]; then
 	echo $(whoami)
 	echo "ERROR: You are not sudo"
@@ -103,7 +110,8 @@ if [ $EUID != 0 ]; then
 fi
 
 # make sure the necessary parameters are present
-if [[ -z $user || -z $key ]]; then
+if [[ -z $user ]]; then
+	echo "Username is missing"
 	usage
 	exit
 fi
@@ -123,21 +131,33 @@ else
 	exit
 fi
 
-# make sure the ssh directory exists
-create_dir
+# Give superuser privileges (sudo)
+if [[ "$superuser" == 1 ]]; then
+	echo "Giving super user privileges"
+	usermod -a -G sudo $user
+	echo "$user ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/$user
+	chmod 600 /etc/sudoers.d/$user
+fi
 
-echo "Copying public key"
-key_name=${key##*/}
-cp /tmp/$key_name $ssh_dir
+# set up public key
+if [[ -n $key ]]; then
+	[[ $VERBOSE ]] && echo "Setting up public key"
+	# make sure the ssh directory exists
+	create_dir
 
-# append the key to user's authorized keys (in case the file already exists)
-cat /tmp/$key_name >> $ssh_dir/authorized_keys
+	echo "Copying public key"
+	key_name=${key##*/}
+	cp /tmp/$key_name $ssh_dir
+
+	# append the key to user's authorized keys (in case the file already exists)
+	cat /tmp/$key_name >> $ssh_dir/authorized_keys
+fi
 
 # set owner on all the files
 chown -R $user:$user $ssh_dir
 
-if [[ ! -z $cleanup ]]; then
-	echo "Cleaning up"
-	rm /tmp/new-user.sh
-	rm /tmp/$key_name
+if [[ -n $cleanup ]]; then
+	[[ $VERBOSE ]] && echo "Cleaning up"
+	rm -f /tmp/new-user.sh
+	rm -f /tmp/$key_name
 fi
