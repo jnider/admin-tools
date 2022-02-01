@@ -33,7 +33,7 @@ function create_dir
 	fi
 }
 
-while getopts "a:cu:i:k:p:r:s" params; do
+while getopts "a:cu:i:k:p:r:sv" params; do
 	case "$params" in
 	a)
 		admin=${OPTARG}
@@ -66,6 +66,9 @@ while getopts "a:cu:i:k:p:r:s" params; do
 	s)
 		superuser=1
 		;;
+	v)
+		VERBOSE=1
+		;;
 	esac
 done
 
@@ -90,13 +93,27 @@ if [[ -z $pw ]]; then
 fi
 
 if [[ ! -z $remote ]]; then
+	if [[ -z $admin ]]; then
+		echo "You must provide an admin account name (-a) for the remote machine"
+		exit
+	fi
+
 	echo "copying script to $remote:/tmp"
 	# copy myself to the remote machine
-	scp $IDENTITY $0 $key $admin@$remote:/tmp
+	cmd="scp $IDENTITY $0 $key $admin@$remote:/tmp"
+	[[ "$VERBOSE" ]] && echo $cmd
+	$cmd
+	if [[ $? != 0 ]]; then
+		echo "Error copying script to $remote:/tmp"
+		exit
+	fi
 
 	# execute myself on the remote machine
+	[[ "$VERBOSE" ]] && echo "Executing on remote machine"
 	exe_name=${0##*/}
-	ssh $IDENTITY $admin@$remote sudo /tmp/$exe_name -a $admin ${cleanup:+"-c"} -u $user ${key:+"-k /tmp/$key"} ${pw:+"-p $pw"} ${superuser:+"-s"}
+	cmd="ssh $IDENTITY $admin@$remote sudo /tmp/$exe_name -a $admin ${cleanup:+\"-c\"} -u $user ${key:+\"-k /tmp/$key\"} ${pw:+\"-p $pw\"} ${superuser:+\"-s\"}"
+	[[ "$VERBOSE" ]] && echo "$cmd"
+	$cmd
 	echo "Done!"
 	exit
 fi
