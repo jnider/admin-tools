@@ -86,12 +86,6 @@ ssh_dir=/home/$user/.ssh
 
 IDENTITY=${identity:+"-i $identity"}
 
-# generate a random password if one has not been provided
-if [[ -z $pw ]]; then
-	echo "Generating password"
-	pw=$(pwgen -B -a 12 1)
-fi
-
 if [[ ! -z $remote ]]; then
 	if [[ -z $admin ]]; then
 		echo "You must provide an admin account name (-a) for the remote machine"
@@ -138,14 +132,23 @@ echo "Adding user account $user"
 useradd -U -s /bin/bash -m $user 2> /dev/null
 ret=$?
 if [[ $ret == 0 ]]; then
-	# set and print the password!
-	echo $user:$pw | chpasswd
-	echo "The password is: $pw"
+	# generate a random password if one has not been provided
+	if [[ -z $pw ]]; then
+		echo "Generating password"
+		pw=$(pwgen -B -a 12 1)
+	fi
 elif [[ $ret == 9 ]]; then
 	echo "Account already exists - updating"
 else
 	echo "Error $ret adding user"
 	exit
+fi
+
+# set and print the password!
+if [[ ! -z $pw ]]; then
+	pw="${pw#"${pw%%[![:space:]]*}"}"
+	chpasswd <<<"$user:$pw"
+	echo "The password is: $pw"
 fi
 
 # Give superuser privileges (sudo)
