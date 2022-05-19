@@ -112,14 +112,14 @@ if [[ ! -z $remote ]]; then
 	$cmd
 	echo "Done!"
 	exit
-fi
-
-# you must be root to run this
-if [ $EUID != 0 ]; then
-	echo $(whoami)
-	echo "ERROR: You are not sudo"
-   usage
-	exit
+else
+	# you must be root to run this locally
+	if [ $EUID != 0 ]; then
+		echo $(whoami)
+		echo "ERROR: You are not sudo"
+		usage
+		exit
+	fi
 fi
 
 # make sure the necessary parameters are present
