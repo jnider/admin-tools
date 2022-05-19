@@ -10,14 +10,15 @@ function usage()
 	echo "Create a user account on a remote machine and set it up for SSH access"
 	echo "$0 -u <username> -k <key> [-a <admin>] [-c] [-i <identity>] [-p <password] [-r <remote>] [-s]"
 	echo "Where:"
-	echo "username    The name of the user account to create"
-	echo "key         The name of the file containing the public key for the new account"
-	echo "admin       The name of the administrator account on the remote machine (that has passwordless sudo access)"
-	echo "-c          Clean up (i.e. remove) the temporary files when done"
-	echo "identity    The identity file (private key) of the administrator account"
-	echo "password    Password for the new account"
-	echo "remote      The IP address or name of the remote machine. This can be omitted for creating a user on the local machine"
-	echo "-s          Give the new account passwordless sudo privileges"
+	echo "-a <admin>       The name of the administrator account on the remote machine (that has passwordless sudo access)"
+	echo "-c               Clean up (i.e. remove) the temporary files when done"
+	echo "-i <identity>    The identity file (private key) of the administrator account"
+	echo "-k <key>         The name of the file containing the public key for the new account"
+	echo "-p <password>    Password for the new account"
+	echo "-r <remote>      The IP address or name of the remote machine. This can be omitted for creating a user on the local machine"
+	echo "-s               Give the new account passwordless sudo privileges"
+	echo "-u <username>    The name of the user account to create"
+	echo "-v               Print additional details about what the script is doing"
 }
 
 function create_dir
@@ -33,7 +34,7 @@ function create_dir
 	fi
 }
 
-while getopts "a:cu:i:k:p:r:sv" params; do
+while getopts "a:ci:k:p:r:su:v" params; do
 	case "$params" in
 	a)
 		admin=${OPTARG}
@@ -41,10 +42,6 @@ while getopts "a:cu:i:k:p:r:sv" params; do
 
 	c)
 		cleanup=1
-		;;
-
-	u)
-		user=${OPTARG}
 		;;
 
 	i)
@@ -66,6 +63,11 @@ while getopts "a:cu:i:k:p:r:sv" params; do
 	s)
 		superuser=1
 		;;
+
+	u)
+		user=${OPTARG}
+		;;
+
 	v)
 		VERBOSE=1
 		;;
