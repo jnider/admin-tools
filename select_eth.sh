@@ -8,11 +8,11 @@
 ifs=$(ls /sys/class/net)
 
 for iface in $ifs; do
-   pci_addr=$(ls -al /sys/class/net/$iface | grep 'pci' | awk '{print $11}' | sed 's_../../devices/.*/.*/\(.*\)/net/.*_\1_')
+   pci_addr=$(realpath /sys/class/net/$iface | sed 's_/sys/devices/pci.*\/\(.*\)/net/.*_\1_')
 
    # only print PCI devices
    if [[ $pci_addr ]]; then
-      dev_name=$(lspci -D | grep $pci_addr)
+      dev_name=$(lspci -D | grep $pci_addr | sed 's_.*: \(.*\)_\1_')
       eth_addr=$(ip link show $iface | grep 'link' | awk '{print $2}')
       echo "$iface ($eth_addr) : $dev_name"
    fi
