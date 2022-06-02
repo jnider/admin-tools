@@ -104,6 +104,12 @@ if [[ ! -z $remote ]]; then
 		exit
 	fi
 
+	# generate a random password if one has not been provided
+	if [[ -z $pw ]]; then
+		echo "Generating password locally"
+		pw=$(pwgen -B -a 12 1)
+	fi
+
 	# execute myself on the remote machine
 	[[ "$VERBOSE" ]] && echo "Executing on remote machine"
 	exe_name=${0##*/}
