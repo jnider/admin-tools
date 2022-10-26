@@ -126,6 +126,11 @@ else
 		usage
 		exit
 	fi
+
+	# copy key to /tmp to match the remote procedure
+	cmd="cp $key /tmp"
+	[[ "$VERBOSE" ]] && echo "$cmd"
+	$cmd
 fi
 
 # make sure the necessary parameters are present
