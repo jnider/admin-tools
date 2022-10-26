@@ -5,6 +5,9 @@
 # remote access. If the account already exists, add a new key for ssh
 # authentication.
 
+# exit if there is an error (such as 'cp' not being able to find a file)
+set -e
+
 function usage()
 {
 	echo "Create a user account on a remote machine and set it up for SSH access"
