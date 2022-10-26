@@ -168,6 +168,7 @@ fi
 if [[ "$superuser" == 1 ]]; then
 	echo "Giving super user privileges"
 	usermod -a -G sudo $user
+	# set up passwordless sudo
 	echo "$user ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/$user
 	chmod 600 /etc/sudoers.d/$user
 fi
@@ -182,8 +183,15 @@ if [[ -n $key ]]; then
 	key_name=${key##*/}
 	cp /tmp/$key_name $ssh_dir
 
-	# append the key to user's authorized keys (in case the file already exists)
-	cat /tmp/$key_name >> $ssh_dir/authorized_keys
+	# check to see if the key already exists in authorized_keys
+	value=($(< /tmp/$key_name))
+	keyname=${value[2]}
+	count=$(grep -c $keyname /$ssh_dir/authorized_keys)
+
+	if [[ $count == 0 ]]; then
+		# append the key to user's authorized keys (in case the file already exists)
+		cat /tmp/$key_name >> $ssh_dir/authorized_keys
+	fi
 fi
 
 # set owner on all the files
