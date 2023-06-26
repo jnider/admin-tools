@@ -37,7 +37,7 @@ function create_dir
 	fi
 }
 
-while getopts "a:ci:k:p:r:su:v" params; do
+while getopts "a:chi:k:p:r:su:v" params; do
 	case "$params" in
 	a)
 		admin=${OPTARG}
@@ -45,6 +45,11 @@ while getopts "a:ci:k:p:r:su:v" params; do
 
 	c)
 		cleanup=1
+		;;
+
+	h)
+		usage
+		exit
 		;;
 
 	i)
