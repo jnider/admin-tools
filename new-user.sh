@@ -192,12 +192,16 @@ if [[ -n $key ]]; then
 	cp /tmp/$key_name $ssh_dir
 
 	# check to see if the key already exists in authorized_keys
-	value=($(< /tmp/$key_name))
-	keyname=${value[2]}
-	count=$(grep -c $keyname /$ssh_dir/authorized_keys)
+	count=0
+	if [[ -e $ssh_dir/authorized_keys ]]; then
+		value=($(< /tmp/$key_name))
+		keyname=${value[2]}
+		count=$(grep -c $keyname $ssh_dir/authorized_keys)
+	fi
 
 	if [[ $count == 0 ]]; then
 		# append the key to user's authorized keys (in case the file already exists)
+		[[ $VERBOSE ]] && echo "Appending public key to authorized_keys"
 		cat /tmp/$key_name >> $ssh_dir/authorized_keys
 	fi
 fi
