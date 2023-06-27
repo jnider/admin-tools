@@ -148,21 +148,23 @@ if [[ -z $user ]]; then
 	exit
 fi
 
-# create the user account
-echo "Adding user account $user"
-useradd -U -s /bin/bash -m $user 2> /dev/null
-ret=$?
+ret=$(id -u $user)
 if [[ $ret == 0 ]]; then
-	# generate a random password if one has not been provided
-	if [[ -z $pw ]]; then
-		echo "Generating password"
-		pw=$(pwgen -B -a 12 1)
+	# create the user account
+	[[ "$VERBOSE" ]] && echo "Adding user account $user"
+	ret=$(useradd -U -s /bin/bash -m $user 2> /dev/null)
+	if [[ $ret == 0 ]]; then
+		# generate a random password if one has not been provided
+		if [[ -z $pw ]]; then
+			echo "Generating password"
+			pw=$(pwgen -B -a 12 1)
+		fi
+	else
+		echo "Error $ret adding user"
+		exit
 	fi
-elif [[ $ret == 9 ]]; then
-	echo "Account already exists - updating"
 else
-	echo "Error $ret adding user"
-	exit
+	[[ "$VERBOSE" ]] && echo "Updating account"
 fi
 
 # set and print the password!
