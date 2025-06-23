@@ -8,6 +8,9 @@
 # exit if there is an error (such as 'cp' not being able to find a file)
 set -e
 
+# default to debian/ubuntu; must be set to 'wheel' on redhat and derivatives
+su_group=sudo
+
 function usage()
 {
 	echo "Create a user account on a remote machine and set it up for SSH access"
@@ -15,6 +18,7 @@ function usage()
 	echo "Where:"
 	echo "-a <admin>       The name of the administrator account on the remote machine (that has passwordless sudo access)"
 	echo "-c               Clean up (i.e. remove) the temporary files when done"
+	echo "-g <group>       The group name used for passwordless sudo (depends on operating system)"
 	echo "-i <identity>    The identity file (private key) of the administrator account"
 	echo "-k <key>         The name of the file containing the public key for the new account"
 	echo "-p <password>    Password for the new account"
@@ -37,7 +41,7 @@ function create_dir
 	fi
 }
 
-while getopts "a:chi:k:p:r:su:v" params; do
+while getopts "a:cg:G:hi:k:p:r:su:v" params; do
 	case "$params" in
 	a)
 		admin=${OPTARG}
@@ -45,6 +49,14 @@ while getopts "a:chi:k:p:r:su:v" params; do
 
 	c)
 		cleanup=1
+		;;
+
+	g)
+		group=${OPTARG}
+		;;
+
+	G)
+		su_group=${OPTARG}
 		;;
 
 	h)
@@ -85,6 +97,8 @@ done
 if [[ "$VERBOSE" ]]; then
 	echo "admin=$admin"
 	echo "user=$user"
+	echo "group=$group"
+	echo "su_group=$su_group"
 	echo "identity=$identity"
 	echo "key=$key"
 	echo "remote=$remote"
@@ -141,6 +155,12 @@ else
 		[[ "$VERBOSE" ]] && echo "$cmd"
 		$cmd
   	fi
+
+	# if group is not set, assume same as user name
+	if [[ -z $group ]]; then
+		group=$user
+		[[ "$VERBOSE" ]] && echo "setting group to $group"
+	fi
 fi
 
 # make sure the necessary parameters are present
@@ -179,7 +199,7 @@ fi
 # Give superuser privileges (sudo)
 if [[ "$superuser" == 1 ]]; then
 	echo "Giving super user privileges"
-	usermod -a -G sudo $user
+	usermod -a -G $su_group $user
 	# set up passwordless sudo
 	echo "$user ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/$user
 	chmod 600 /etc/sudoers.d/$user
@@ -211,7 +231,7 @@ if [[ -n $key ]]; then
 fi
 
 # set owner on all the files
-chown -R $user:$user $ssh_dir
+chown -R $user:$group $ssh_dir
 
 if [[ -n $cleanup ]]; then
 	[[ $VERBOSE ]] && echo "Cleaning up"
