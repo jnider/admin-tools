@@ -135,7 +135,8 @@ if [[ ! -z $remote ]]; then
 	# execute myself on the remote machine
 	[[ "$VERBOSE" ]] && echo "Executing on remote machine"
 	exe_name=${0##*/}
-	cmd="ssh $IDENTITY $admin@$remote sudo /tmp/$exe_name -a $admin ${cleanup:+\"-c\"} -u $user ${key:+\"-k /tmp/$key\"} ${pw:+\"-p $pw\"} ${superuser:+\"-s\"}"
+	key_name=${key##*/}
+	cmd="ssh $IDENTITY $admin@$remote sudo /tmp/$exe_name ${VERBOSE:+'-v'} -a $admin ${cleanup:+\"-c\"} -u $user ${key:+-k \"/tmp/$key_name\"} ${pw:+-p '$pw'} ${superuser:+\"-s\"}"
 	[[ "$VERBOSE" ]] && echo "$cmd"
 	$cmd
 	echo "Done!"
@@ -148,13 +149,6 @@ else
 		usage
 		exit
 	fi
-
-	# copy key to /tmp to match the remote procedure
-	if [[ ! -z $key ]]; then
-		cmd="cp $key /tmp"
-		[[ "$VERBOSE" ]] && echo "$cmd"
-		$cmd
-  	fi
 
 	# if group is not set, assume same as user name
 	if [[ -z $group ]]; then
@@ -213,7 +207,9 @@ if [[ -n $key ]]; then
 
 	echo "Copying public key"
 	key_name=${key##*/}
-	cp /tmp/$key_name $ssh_dir
+	cmd="cp /tmp/$key_name $ssh_dir"
+	[[ "$VERBOSE" ]] && echo $cmd
+	$cmd
 
 	# check to see if the key already exists in authorized_keys
 	count=0
