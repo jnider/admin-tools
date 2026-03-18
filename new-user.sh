@@ -215,14 +215,21 @@ if [[ -n $key ]]; then
 
 	echo "Copying public key"
 	key_name=${key##*/}
-	cmd="cp /tmp/$key_name $ssh_dir"
+	if [[ -e $key ]]; then
+		# if the script is called locally, use the name of the key file as-is
+		cmd="cp $key $ssh_dir"
+	else
+		# if the script was originally called from a remote machine, the key will be in /tmp
+		cmd="cp /tmp/$key_name $ssh_dir"
+	fi
 	[[ "$VERBOSE" ]] && echo $cmd
 	$cmd
 
 	# check to see if the key already exists in authorized_keys
 	count=0
 	if [[ -e $ssh_dir/authorized_keys ]]; then
-		value=($(< /tmp/$key_name))
+		# extract the username@host from the key file
+		value=($(< $ssh_dir/$key_name))
 		keyname=${value[2]}
 		count=$(grep -c $keyname $ssh_dir/authorized_keys)
 	fi
@@ -230,7 +237,7 @@ if [[ -n $key ]]; then
 	if [[ $count == 0 ]]; then
 		# append the key to user's authorized keys (in case the file already exists)
 		[[ $VERBOSE ]] && echo "Appending public key to authorized_keys"
-		cat /tmp/$key_name >> $ssh_dir/authorized_keys
+		cat $ssh_dir/$key_name >> $ssh_dir/authorized_keys
 	fi
 fi
 
