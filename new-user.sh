@@ -5,10 +5,7 @@
 # remote access. If the account already exists, add a new key for ssh
 # authentication.
 
-# exit if there is an error (such as 'cp' not being able to find a file)
-set -e
-
-# default to debian/ubuntu; must be set to 'wheel' on redhat and derivatives
+# set to 'sudo' on debian/ubuntu; set to 'wheel' on redhat and derivatives
 su_group=sudo
 
 function usage()
@@ -18,7 +15,8 @@ function usage()
 	echo "Where:"
 	echo "-a <admin>       The name of the administrator account on the remote machine (that has passwordless sudo access)"
 	echo "-c               Clean up (i.e. remove) the temporary files when done"
-	echo "-g <group>       The group name used for passwordless sudo (depends on operating system)"
+	echo "-g <group>       The group name for the user"
+	echo "-G <group>       The group name used for passwordless sudo (depends on operating system)"
 	echo "-i <identity>    The identity file (private key) of the administrator account"
 	echo "-k <key>         The name of the file containing the public key for the new account"
 	echo "-p <password>    Password for the new account"
@@ -144,7 +142,7 @@ if [[ ! -z $remote ]]; then
 	[[ "$VERBOSE" ]] && echo "Executing on remote machine"
 	exe_name=${0##*/}
 	key_name=${key##*/}
-	cmd="ssh $IDENTITY $admin@$remote sudo /tmp/$exe_name ${VERBOSE:+'-v'} -a $admin ${cleanup:+\"-c\"} -u $user ${key:+-k \"/tmp/$key_name\"} ${pw:+-p '$pw'} ${superuser:+\"-s\"}"
+	cmd="ssh $IDENTITY $admin@$remote sudo /tmp/$exe_name ${VERBOSE:+'-v'} -a $admin ${cleanup:+\"-c\"} -u $user ${key:+-k \"/tmp/$key_name\"} ${pw:+-p '$pw'} ${superuser:+\"-s\"} -G $su_group"
 	[[ "$VERBOSE" ]] && echo "$cmd"
 	$cmd
 	echo "Done!"
