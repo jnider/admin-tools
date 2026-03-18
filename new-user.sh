@@ -110,6 +110,14 @@ ssh_dir=/home/$user/.ssh
 
 IDENTITY=${identity:+"-i $identity"}
 
+# make sure necessary tools are available
+if [[ -z $pw ]]; then
+	if [[ $(pwgen 2&> /dev/null || echo $?) == 127 ]]; then
+		echo "pwgen is not available"
+		exit
+	fi
+fi
+
 if [[ ! -z $remote ]]; then
 	if [[ -z $admin ]]; then
 		echo "You must provide an admin account name (-a) for the remote machine"
