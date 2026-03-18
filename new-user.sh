@@ -170,12 +170,13 @@ if [[ -z $user ]]; then
 	exit
 fi
 
-ret=$(id -u $user)
-if [[ $ret == 0 ]]; then
+[[ "$VERBOSE" ]] && echo "Checking for existing user account $user"
+existing=$(id -u $user)
+if [[ $? == 1 ]]; then
 	# create the user account
 	[[ "$VERBOSE" ]] && echo "Adding user account $user"
 	ret=$(useradd -U -s /bin/bash -m $user 2> /dev/null)
-	if [[ $ret == 0 ]]; then
+	if [[ $? == 0 ]]; then
 		# generate a random password if one has not been provided
 		if [[ -z $pw ]]; then
 			echo "Generating password"
